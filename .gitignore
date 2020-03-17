@@ -1,5 +1,5 @@
 #Ignoring vscode files
-**/vscode
+**/.vscode
 
 #Ignoring pycache files
 **/__pycache__
