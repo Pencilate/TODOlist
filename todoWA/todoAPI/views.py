@@ -46,3 +46,33 @@ def logoutView(request):
 
 class TodoController(View):  
     http_method_names = ['get','post','put','delete']
+
+    def post(self,request,**kwargs):
+
+        if(str(request.body) == "b''"):
+            return HttpResponse(json.dumps({"message":"Wrong REST API Method used. Your request body appear to be empty but this is a POST endpoint."}), content_type='application/json', status=405)    
+        if request.user.is_authenticated:
+            if len(kwargs) == 0:
+                try:
+                    title = request.POST['title']
+                    description = request.POST['description']
+                except MultiValueDictKeyError:
+                    return HttpResponse(json.dumps({"message":"Bad Request. Ensure the data contains both 'title' and 'description' field"}), content_type='application/json', status=400)
+
+
+                if not title or not description:
+                    return HttpResponse(json.dumps({"message":"Bad Request. Ensure the data you sent are proper"}), content_type='application/json', status=400)
+                    
+                todo = Todo(title=title,description=description,status=False,createdBy_id=request.user.id)
+                todo.save()
+                oneTodoData = list(Todo.objects.filter(id=todo.id).values())[0]
+                del oneTodoData["createdBy_id"]
+                return HttpResponse(json.dumps(oneTodoData), content_type='application/json', status=201)
+
+            else:
+                return HttpResponse(json.dumps({"message":"Wrong REST API Method used. Are you trying to update a TODO?."}), content_type='application/json', status=405)    
+        else:
+            return HttpResponse(json.dumps({"message":"You are not logged in"}), content_type='application/json', status=401)
+
+
+
