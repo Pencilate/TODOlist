@@ -46,3 +46,30 @@ def logoutView(request):
 
 class TodoController(View):  
     http_method_names = ['get','post','put','delete']
+
+    def get(self,request,**kwargs):
+        # logger = logging.getLogger()
+        if(str(request.body) != "b''"):
+            return HttpResponse(json.dumps({"message":"Wrong REST API Method used. Your request body appears to contain data, please use POST or PUT instead."}), content_type='application/json', status=405)    
+        # logger.debug("Number of arguments sent to GET: "+str(len(kwargs)))
+        if request.user.is_authenticated == True:
+            if len(kwargs) == 0:
+                data = list(Todo.objects.filter(createdBy_id = request.user.id).values('id','title','description','status'))
+                return JsonResponse(data,safe=False)
+            else:
+                if(str(kwargs["todoid"]).isnumeric()):
+                    data = list(Todo.objects.filter(id=kwargs["todoid"]).values())
+                    if len(data) == 1:
+                        if data[0]["createdBy_id"] == request.user.id:
+                            oneTodoData = data[0]
+                            del oneTodoData["createdBy_id"]
+                            return JsonResponse(oneTodoData,safe=False)
+                        else:
+                            return HttpResponse(json.dumps({"message":"Forbidden Resource. You are not authorized to access this TODO"}), content_type='application/json', status=403)
+                            
+                    else:
+                        return HttpResponse(json.dumps({"message":"This TODO you are trying to access does not exist"}), content_type='application/json', status=401)
+                else:
+                        return HttpResponse(json.dumps({"message":"Bad Request. Please ensure that your todoID Query Param is an Integer"}), content_type='application/json', status=400)
+        else:
+            return HttpResponse(json.dumps({"message":"You are not logged in"}), content_type='application/json', status=401)
