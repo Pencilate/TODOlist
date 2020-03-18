@@ -3,3 +3,6 @@
 
 #Ignoring pycache files
 **/__pycache__
+
+#Ignore any SQLite3 Databases
+*.sqlite3
