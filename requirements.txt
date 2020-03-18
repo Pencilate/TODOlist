@@ -1,2 +1,1 @@
-todoWA
 django==2.2.11
