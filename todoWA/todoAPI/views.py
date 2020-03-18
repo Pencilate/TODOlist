@@ -13,15 +13,14 @@ def loginView(request):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
-        # user = authenticate(request, username=username,password=password)
-
-        try:
-            user = User.objects.get(username=username,password=password)
-            if user is not None:
-                print("User Authenticated")
-                login(request,user)
-                return JsonResponse(data={"userId":user.id})
-        except ObjectDoesNotExist:
+        print("Username is "+username)
+        print("Password is "+password)
+        user = authenticate(request, username=username,password=password)
+        if user is not None:
+            print("User Authenticated")
+            login(request,user)
+            return JsonResponse(data={"userId":user.id})
+        else:
             print("User Invalid")
             return HttpResponse(json.dumps({"message":"You have entered invalid credential"}), content_type='application/json', status=401)
     else:
