@@ -7,6 +7,7 @@ from django.core.serializers import serialize
 from django.core.exceptions import ObjectDoesNotExist
 from django.views import View
 import json
+import logging
 
 # Create your views here.
 def loginView(request):
@@ -34,5 +35,7 @@ def logoutView(request):
         else:
             return HttpResponse(json.dumps({"message":"Unauthorized Action. You are not logged in"}), content_type='application/json', status=401)
     else:
-        return HttpResponse(json.dumps({"message":"Please use POST REST API to login"}), content_type='application/json', status=405)
-    
+        return HttpResponse(json.dumps({"message":"Please use POST REST API to login"}), content_type='application/json', status=405)    
+
+class TodoController(View):  
+    http_method_names = ['get','post','put','delete']
