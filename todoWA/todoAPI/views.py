@@ -60,9 +60,7 @@ class TodoController(View):
                 
             todo = Todo(title=title,description=description,status=False,createdBy_id=request.user.id)
             todo.save()
-            oneTodoData = list(Todo.objects.filter(id=todo.id).values())[0]
-            del oneTodoData["createdBy_id"]
-            return JsonResponse(oneTodoData, status=201)
+            return JsonResponse({"id":todo.id,"title":todo.title,"description":todo.description,"status":todo.status},status=201)
         else:
             return JsonResponse({"message":"Unauthorized Access. You need to login to create this TODO."}, status=401)
 
