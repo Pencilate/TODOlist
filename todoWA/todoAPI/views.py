@@ -56,7 +56,7 @@ class TodoController(View):
 
 
 class TodoControllerSpecific(View):
-    http_method_names = ['get','post','delete']
+    http_method_names = ['get','put','delete']
 
     def get(self,request,**kwargs):
         # logger = logging.getLogger()
