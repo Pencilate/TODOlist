@@ -45,34 +45,26 @@ def logoutView(request):
         return JsonResponse({"message":"Please use POST REST API to login"}, status=405)   
 
 class TodoController(View):  
-    http_method_names = ['get','post','put','delete']
+    http_method_names = ['get','post']
 
-    def post(self,request,**kwargs):
-
-        if(str(request.body) == "b''"):
-            return JsonResponse({"message":"Wrong REST API Method used. Your request body appear to be empty but this is a POST endpoint."}, status=405)    
+    def post(self,request):
         if request.user.is_authenticated:
-            if len(kwargs) == 0:
-                try:
-                    title = request.POST['title']
-                    description = request.POST['description']
-                except MultiValueDictKeyError:
-                    return JsonResponse({"message":"Bad Request. Ensure the data contains both 'title' and 'description' field"}, status=400)
+            try:
+                title = request.POST['title']
+                description = request.POST['description']
+            except MultiValueDictKeyError:
+                return JsonResponse({"message":"Bad Request. Ensure the data contains 'title' and 'description' field."}, status=400)
 
-
-                if not title or not description:
-                    return JsonResponse({"message":"Bad Request. Ensure the data you sent are proper"}, status=400)
-                    
-                todo = Todo(title=title,description=description,status=False,createdBy_id=request.user.id)
-                todo.save()
-                oneTodoData = list(Todo.objects.filter(id=todo.id).values())[0]
-                del oneTodoData["createdBy_id"]
-                return JsonResponse(oneTodoData, status=201)
-
-            else:
-                return JsonResponse({"message":"Wrong REST API Method used. Are you trying to update a TODO?."}, status=405)    
+            if not title or not description:
+                return JsonResponse({"message":"Bad Request. Ensure the data you sent do not have blank values."}, status=400)
+                
+            todo = Todo(title=title,description=description,status=False,createdBy_id=request.user.id)
+            todo.save()
+            oneTodoData = list(Todo.objects.filter(id=todo.id).values())[0]
+            del oneTodoData["createdBy_id"]
+            return JsonResponse(oneTodoData, status=201)
         else:
-            return JsonResponse({"message":"You are not logged in"}, status=401)
+            return JsonResponse({"message":"Unauthorized Access. You need to login to create this TODO."}, status=401)
 
 
 
