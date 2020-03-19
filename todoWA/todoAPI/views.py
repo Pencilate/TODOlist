@@ -65,11 +65,11 @@ class TodoController(View):
                             del oneTodoData["createdBy_id"]
                             return JsonResponse(oneTodoData,safe=False)
                         else:
-                            return JsonResponse({"message":"Forbidden Resource. You are not authorized to access this TODO"}, status=403)
+                            return JsonResponse({"message":"Forbidden Resource. You are not authorized to access this TODO."}, status=403)
                             
                     else:
-                        return JsonResponse({"message":"This TODO you are trying to access does not exist"}, status=401)
+                        return JsonResponse({"message":"Not Found. This TODO you are trying to access does not exist."}, status=404)
                 else:
-                        return JsonResponse({"message":"Bad Request. Please ensure that your todoID Query Param is an Integer"}, status=400)
+                        return JsonResponse({"message":"Bad Request. Please ensure that your todoID query parameter is an integer."}, status=400)
         else:
-            return JsonResponse({"message":"You are not logged in"}, status=401)
+            return JsonResponse({"message":"Unauthorized Access. You need to login to access this TODO."}, status=401)
