@@ -45,31 +45,33 @@ def logoutView(request):
         return JsonResponse({"message":"Please use POST REST API to login"}, status=405)   
 
 class TodoController(View):  
-    http_method_names = ['get','post','put','delete']
+    http_method_names = ['get','post']
+
+    def get(self,request):
+        if request.user.is_authenticated:
+                data = list(Todo.objects.filter(createdBy_id = request.user.id).values('id','title','description','status'))
+                return JsonResponse({"records": data})
+        else:
+            return JsonResponse({"message":"Unauthorized Access. You need to login to access this TODO."}, status=401)
+
+
+class TodoControllerSpecific(View):
+    http_method_names = ['get','post','delete']
 
     def get(self,request,**kwargs):
         # logger = logging.getLogger()
-        if(str(request.body) != "b''"):
-            return JsonResponse({"message":"Wrong REST API Method used. Your request body appears to contain data, please use POST or PUT instead."}, status=405)    
         # logger.debug("Number of arguments sent to GET: "+str(len(kwargs)))
         if request.user.is_authenticated:
-            if len(kwargs) == 0:
-                data = list(Todo.objects.filter(createdBy_id = request.user.id).values('id','title','description','status'))
-                return JsonResponse(data,safe=False)
-            else:
-                if(str(kwargs["todoid"]).isnumeric()):
-                    data = list(Todo.objects.filter(id=kwargs["todoid"]).values())
-                    if len(data) == 1:
-                        if data[0]["createdBy_id"] == request.user.id:
-                            oneTodoData = data[0]
-                            del oneTodoData["createdBy_id"]
-                            return JsonResponse(oneTodoData,safe=False)
-                        else:
-                            return JsonResponse({"message":"Forbidden Resource. You are not authorized to access this TODO."}, status=403)
-                            
-                    else:
-                        return JsonResponse({"message":"Not Found. This TODO you are trying to access does not exist."}, status=404)
+            data = list(Todo.objects.filter(id=kwargs["todoid"]).values())
+            if len(data) == 1:
+                if data[0]["createdBy_id"] == request.user.id:
+                    oneTodoData = data[0]
+                    del oneTodoData["createdBy_id"]
+                    return JsonResponse(oneTodoData)
                 else:
-                        return JsonResponse({"message":"Bad Request. Please ensure that your todoID query parameter is an integer."}, status=400)
+                    return JsonResponse({"message":"Forbidden Resource. You are not authorized to access this TODO."}, status=403)
+            else:
+                return JsonResponse({"message":"Not Found. This TODO you are trying to access does not exist."}, status=404)
         else:
             return JsonResponse({"message":"Unauthorized Access. You need to login to access this TODO."}, status=401)
+
