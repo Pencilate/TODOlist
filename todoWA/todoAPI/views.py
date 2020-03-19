@@ -44,47 +44,40 @@ def logoutView(request):
     else:
         return JsonResponse({"message":"Please use POST REST API to login"}, status=405)   
 
-class TodoController(View):  
-    http_method_names = ['get','post','put','delete']
+class TodoController(View):
+    http_method_names = ['get','post']
+
+class TodoControllerSpecific(View):
+    http_method_names = ['get','put','delete']
 
     def put(self,request, **kwargs):
-        
-        if(str(request.body) == "b''"):
-                return JsonResponse({"message":"Wrong REST API Method used. Your request body appear to be empty but this is a PUT endpoint."}, status=405)    
         if request.user.is_authenticated:
-            if len(kwargs) == 1 and 'todoid' in kwargs:
-                if str(kwargs["todoid"]).isnumeric():
-                    request.method = 'POST'
-                    try:
-                        title = request.POST['title']
-                        description = request.POST['description']
-                        status = request.POST['status']
-                    except MultiValueDictKeyError:
-                        return JsonResponse({"message":"Bad Request. Ensure the data contains 'title', 'description' and 'status' field"}, status=400)
+            request.method = 'POST'
+            try:
+                title = request.POST['title']
+                description = request.POST['description']
+                status = request.POST['status']
+            except MultiValueDictKeyError:
+                return JsonResponse({"message":"Bad Request. Ensure the data contains 'title', 'description' and 'status' field"}, status=400)
 
+            if not title or not description or not status:
+                return JsonResponse({"message":"Bad Request. Ensure the data you sent do not have blank values"}, status=400)
+            
+            try:
+                todo = Todo.objects.get(id=kwargs["todoid"])
+            except ObjectDoesNotExist:
+                return JsonResponse({"message":"Not Found. This TODO you are trying to update does not exist"},status=404) 
+            
+            if(todo.createdBy_id == request.user.id):
+                todo.title = title
+                todo.description = description
+                todo.status = status
+                todo.save()
 
-                    if not title or not description or not status:
-                        return JsonResponse({"message":"Bad Request. Ensure the data you sent do not have blank values"}, status=400)
-                    
-                    try:
-                        todo = Todo.objects.get(id=kwargs["todoid"])
-                    except ObjectDoesNotExist:
-                        return JsonResponse({"message":"Not Found. This TODO you are trying to update does not exist"},status=404) 
-                    
-                    if(todo.createdBy_id == request.user.id):
-                        todo.title = title
-                        todo.description = description
-                        todo.status = status
-                        todo.save()
-
-                        oneTodoData = list(Todo.objects.filter(id=todo.id).values())[0]
-                        del oneTodoData["createdBy_id"]
-                        return JsonResponse(oneTodoData, status=201)
-                    else:
-                        return JsonResponse({"message":"Forbidden Resource. You are not authorised to update this TODO"},status=403)
-                else:       
-                    return JsonResponse({"message":"Bad Request. Please ensure that your todoID Query Param is an Integer"}, status=400)
+                oneTodoData = list(Todo.objects.filter(id=todo.id).values())[0]
+                del oneTodoData["createdBy_id"]
+                return JsonResponse(oneTodoData, status=201)
             else:
-                return JsonResponse({"message":"Bad Request. Missing TodoID"}, status=400)    
+                return JsonResponse({"message":"Forbidden Resource. You are not authorised to update this TODO"},status=403)
         else:
             return JsonResponse({"message":"Unauthorized Access. You need to login to update this todo"}, status=401)
