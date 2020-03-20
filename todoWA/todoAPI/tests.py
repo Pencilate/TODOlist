@@ -32,6 +32,27 @@ class UserTests(TestCase):
      
 class TodoTests(TestCase):
 
+    def test_getTodo(self):
+        Todo.objects.all().delete()
+        User.objects.all().delete()
+        testuser = User.objects.create_user(username="JohnnyTodo",password="12345678")
+        todo = Todo.objects.create(title="TestTodoGET",description="Test TODO Description",status=False,createdBy_id=1)
+        todo2 = Todo.objects.create(title="TestTodoGET2",description="Test TODO2 Description",status=False,createdBy_id=1)
+        todo.save()
+        todo2.save()
+
+        c = Client()
+        c.login(username="JohnnyTodo",password="12345678")
+        response = c.get('/todoapi/todos/')
+        self.assertEqual(response.status_code,200)
+
+        c.logout() 
+        response = c.get('/todoapi/todos/')
+        self.assertEqual(response.status_code,401)
+
+
+
+
     def test_getSpecificTodo(self):
         Todo.objects.all().delete()
         User.objects.all().delete()
