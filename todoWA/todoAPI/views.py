@@ -131,7 +131,7 @@ class TodoControllerSpecific(View):
                 return JsonResponse({"message":"Not Found. This TODO you are trying to delete does not exist"},status=404) 
             
             if(todo.createdBy_id == request.user.id):
-                count = todo.delete()
+                todo.delete()
                 return JsonResponse({"message": "Successfully Deletion"})
             else:
                 return JsonResponse({"message":"Forbidden Resource. You are not authorized to delete this TODO."}, status=403)
