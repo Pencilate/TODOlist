@@ -73,10 +73,8 @@ class TodoControllerSpecific(View):
                 todo.description = description
                 todo.status = status
                 todo.save()
-
-                oneTodoData = list(Todo.objects.filter(id=todo.id).values())[0]
-                del oneTodoData["createdBy_id"]
-                return JsonResponse(oneTodoData, status=201)
+                
+                return JsonResponse({"id":todo.id,"title":todo.title,"description":todo.description,"status":todo.status}, status=200)
             else:
                 return JsonResponse({"message":"Forbidden Resource. You are not authorised to update this TODO"},status=403)
         else:
