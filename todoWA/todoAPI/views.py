@@ -4,11 +4,12 @@ from django.http import HttpResponse,JsonResponse,HttpResponseNotFound
 from django.contrib.auth.models import User
 from todoAPI.models import Todo
 from django.core.serializers import serialize
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.views import View
 import json
 import logging
 from django.utils.datastructures import MultiValueDictKeyError
+from django.forms.models import model_to_dict
 
 # Create your views here.
 def loginView(request):
@@ -44,11 +45,54 @@ def logoutView(request):
     else:
         return JsonResponse({"message":"Please use POST REST API to login"}, status=405)   
 
-class TodoController(View):
+
+class TodoController(View):  
     http_method_names = ['get','post']
+
+    def get(self,request):
+        if request.user.is_authenticated:
+                data = list(Todo.objects.filter(createdBy_id = request.user.id).values('id','title','description','status'))
+                return JsonResponse({"records": data})
+        else:
+            return JsonResponse({"message":"Unauthorized Access. You need to login to access this TODO."}, status=401)
+          
+    def post(self,request):
+        if request.user.is_authenticated:
+            try:
+                title = request.POST['title']
+                description = request.POST['description']
+            except MultiValueDictKeyError:
+                return JsonResponse({"message":"Bad Request. Ensure the data contains 'title' and 'description' field."}, status=400)
+
+            if not title or not description:
+                return JsonResponse({"message":"Bad Request. Ensure the data you sent do not have blank values."}, status=400)
+                
+            todo = Todo(title=title,description=description,status=False,createdBy_id=request.user.id)
+            todo.save()
+            return JsonResponse({"id":todo.id,"title":todo.title,"description":todo.description,"status":todo.status},status=201)
+        else:
+            return JsonResponse({"message":"Unauthorized Access. You need to login to create this TODO."}, status=401)
 
 class TodoControllerSpecific(View):
     http_method_names = ['get','put','delete']
+
+    def get(self,request,**kwargs):
+        # logger = logging.getLogger()
+        # logger.debug("Number of arguments sent to GET: "+str(len(kwargs)))
+        if request.user.is_authenticated:
+            try:
+                data = Todo.objects.get(id=kwargs["todoid"])
+            except ObjectDoesNotExist:
+                return JsonResponse({"message":"Not Found. This TODO you are trying to access does not exist."}, status=404)
+            except MultipleObjectsReturned:
+                return JsonResponse({"message":"Internal Server Error. A problem has occured retrieveing your TODO"}, status=500)
+            
+            if data.createdBy_id == request.user.id:
+                return JsonResponse({"id":data.id,"title":data.title,"description":data.description,"status":data.status})
+            else:
+                return JsonResponse({"message":"Forbidden Resource. You are not authorized to access this TODO."}, status=403)
+        else:
+            return JsonResponse({"message":"Unauthorized Access. You need to login to access this TODO."}, status=401)
 
     def put(self,request, **kwargs):
         if request.user.is_authenticated:
@@ -79,3 +123,4 @@ class TodoControllerSpecific(View):
                 return JsonResponse({"message":"Forbidden Resource. You are not authorised to update this TODO"},status=403)
         else:
             return JsonResponse({"message":"Unauthorized Access. You need to login to update this todo"}, status=401)
+
