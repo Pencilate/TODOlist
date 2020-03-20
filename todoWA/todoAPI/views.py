@@ -45,7 +45,6 @@ def logoutView(request):
     else:
         return JsonResponse({"message":"Please use POST REST API to login"}, status=405)   
 
-
 class TodoController(View):  
     http_method_names = ['get','post']
 
@@ -123,4 +122,19 @@ class TodoControllerSpecific(View):
                 return JsonResponse({"message":"Forbidden Resource. You are not authorised to update this TODO"},status=403)
         else:
             return JsonResponse({"message":"Unauthorized Access. You need to login to update this todo"}, status=401)
+          
+    def delete(self,request,**kwargs):
+        if request.user.is_authenticated:
+            try:
+                todo = Todo.objects.get(id=kwargs["todoid"])
+            except ObjectDoesNotExist:
+                return JsonResponse({"message":"Not Found. This TODO you are trying to delete does not exist"},status=404) 
+            
+            if(todo.createdBy_id == request.user.id):
+                todo.delete()
+                return JsonResponse({"message": "Successfully Deletion"})
+            else:
+                return JsonResponse({"message":"Forbidden Resource. You are not authorized to delete this TODO."}, status=403)
+        else:
+            return JsonResponse({"message":"Unauthorized Access. You need to login to delete this TODO."}, status=401)
 
