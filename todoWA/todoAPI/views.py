@@ -45,6 +45,7 @@ def logoutView(request):
     else:
         return JsonResponse({"message":"Please use POST REST API to login"}, status=405)   
 
+
 class TodoController(View):  
     http_method_names = ['get','post']
 
@@ -93,4 +94,33 @@ class TodoControllerSpecific(View):
         else:
             return JsonResponse({"message":"Unauthorized Access. You need to login to access this TODO."}, status=401)
 
+    def put(self,request, **kwargs):
+        if request.user.is_authenticated:
+            request.method = 'POST'
+            try:
+                title = request.POST['title']
+                description = request.POST['description']
+                status = request.POST['status']
+            except MultiValueDictKeyError:
+                return JsonResponse({"message":"Bad Request. Ensure the data contains 'title', 'description' and 'status' field"}, status=400)
+
+            if not title or not description or not status:
+                return JsonResponse({"message":"Bad Request. Ensure the data you sent do not have blank values"}, status=400)
+            
+            try:
+                todo = Todo.objects.get(id=kwargs["todoid"])
+            except ObjectDoesNotExist:
+                return JsonResponse({"message":"Not Found. This TODO you are trying to update does not exist"},status=404) 
+            
+            if(todo.createdBy_id == request.user.id):
+                todo.title = title
+                todo.description = description
+                todo.status = status
+                todo.save()
+                
+                return JsonResponse({"id":todo.id,"title":todo.title,"description":todo.description,"status":todo.status}, status=200)
+            else:
+                return JsonResponse({"message":"Forbidden Resource. You are not authorised to update this TODO"},status=403)
+        else:
+            return JsonResponse({"message":"Unauthorized Access. You need to login to update this todo"}, status=401)
 
